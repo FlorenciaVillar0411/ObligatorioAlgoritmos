@@ -4,7 +4,6 @@ import dominio.*;
 import tads.*;
 
 public class Sistema implements IObligatorio {
-
     private int capacidadCajas;
     private int cantidadCajas;
     private ListaOrdenada<Cliente> listaClienteOrdenada;
@@ -16,6 +15,7 @@ public class Sistema implements IObligatorio {
     private Lista<OrdendeEspera> listaOrdenesDeEspera;
 
     public Sistema() {
+        //se crean las listas instanciando la listaOrdenadaImplentada
         this.listaClienteOrdenada = new ListaOrdenadaImplementada<>();
         this.listaClientes = new ListaImplementada<>();
         this.listaCamiones = new ListaImplementada<>();
@@ -24,7 +24,8 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
-    //pre:      post:
+    //2.1
+    //Crea la estructura necesaria para representar el sistema de distribución.
     public Retorno crearSistemaDeDistribucion(int capacidadCajas) {
         if (capacidadCajas <= 0) {
             return new Retorno(Retorno.Resultado.ERROR_1);
@@ -35,8 +36,9 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    //2.2
+    //Registra al cliente, siempre y cuando ya no exista en el sistema.
     public Retorno agregarCliente(String nombre, String rut, int tel, String direccion) {
-
         if (listaClientes.existe(new Cliente(rut))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
         } else {
@@ -48,6 +50,8 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    //2.3
+    //Elimina el cliente con el rut indicado, siempre y cuando no tenga entregas registradas.
     public Retorno eliminarCliente(String rut) {
         if (!this.listaClientes.existe(new Cliente(rut))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
@@ -60,6 +64,8 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    //2.4
+    //Crea el camión en el sistema
     public Retorno agregarCamion(String matricula, int toneladasMaxSoportadas) {
         if (this.listaCamiones.existe(new Camion(matricula))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
@@ -74,6 +80,8 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    //2.5
+    //Elimina el camión del sistema.
     public Retorno eliminarCamion(String matricula) {
         if (!this.listaCamiones.existe(new Camion(matricula))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
@@ -86,6 +94,8 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    //2.6
+    //Se registra el producto en el sistema.
     public Retorno registrarProducto(String nombre, String descripcion) {
         if (this.listaProductos.existe(new Producto(nombre))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
@@ -98,8 +108,9 @@ public class Sistema implements IObligatorio {
         }
     }
 
-    //3.1
     @Override
+    //3.1
+    //Se realiza el despacho de un determinado producto en la Fábrica.
     public Retorno altaDeStockDeProducto(String matriculaCamion, int codigoProd, int nroCaja, int cantUnidades) {
         if (!this.listaCamiones.existe(new Camion(matriculaCamion))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
@@ -116,39 +127,38 @@ public class Sistema implements IObligatorio {
         } else if (this.capacidadCajas < this.cantidadCajas) {
             return new Retorno(Retorno.Resultado.ERROR_5);
         } else {
-            Stock stockNuevo = new Stock(matriculaCamion, codigoProd, nroCaja, cantUnidades);
-            this.listaStock.agregarAlFinal(stockNuevo);
-            this.cantidadCajas++;
+            Stock stockNuevo = new Stock(matriculaCamion, codigoProd, nroCaja, cantUnidades);//se genera un stock nuevo del producto
+            this.listaStock.agregarAlFinal(stockNuevo);//se agrega al final de la pila de stocks
+            this.cantidadCajas++; // la cantidad de cajas en fabrica aumenta
             Producto p = this.listaProductos.obtener(new Producto(codigoProd));
-            p.modificarStock(cantUnidades);
-            
-            revisarOrdenes(stockNuevo, p);
-            
+            p.modificarStock(cantUnidades);//se modifica el stock existente
+            revisarOrdenesEnEspera(stockNuevo, p);
             return new Retorno(Retorno.Resultado.OK);
         }
     }
     
-    private void revisarOrdenes(Stock stock, Producto prod){
-        OrdendeEspera orden = this.listaOrdenesDeEspera.obtener(new OrdendeEspera(stock.codigoProd));
-        
-         if (prod.stockDisponible >= orden.cant) { //elimina stock si hay disponible
-                eliminarStock(prod, orden.cant);
-                this.listaRetiros.agregarAlFinal(new Retiro(orden.matriculaCam, orden.rutCliente, orden.codProducto, orden.cant));
-                this.listaOrdenesDeEspera.eliminar(orden);
-            } else {
+    private void revisarOrdenesEnEspera(Stock stock, Producto prod){
+        OrdendeEspera orden = this.listaOrdenesDeEspera.obtener(new OrdendeEspera(stock.codigoProd));//la orden de espera de un producto dado
+         if (prod.stockDisponible >= orden.cant) { //se controla que la capacidad de stock sea mayor a la cantidad requerida para poder hacer el despacho de la caja
+                eliminarStock(prod, orden.cant);//se elimina del stock total la orden
+                this.listaRetiros.agregarAlFinal(new Retiro(orden.matriculaCam, orden.rutCliente, orden.codProducto, orden.cant));//se retira de la lista de retiros
+                this.listaOrdenesDeEspera.eliminar(orden);// se elimina de la lista de ordenes en espera
+                
+            } else { //si el stock disponible es menor a la cantidad de la orden
                 eliminarStock(prod, prod.stockDisponible);
                 int cantidadEspera = orden.cant - prod.stockDisponible;
                 this.listaRetiros.agregarAlFinal(new Retiro(orden.matriculaCam, orden.rutCliente, orden.codProducto, prod.stockDisponible));
                 this.listaOrdenesDeEspera.agregarAlFinal(new OrdendeEspera(orden.matriculaCam, orden.rutCliente, orden.codProducto, cantidadEspera));
+                //se agrega una nueva orden de espera para ese producto y esa cantidad, camion, cliente y esa cantidad faltante
                 this.listaOrdenesDeEspera.eliminar(orden);             
             }
     }
 
-    //3.2
     @Override
+     //3.2
+    //Se realiza un retiro de una cantidad de unidades del producto especificado para el envío a un cliente
     public Retorno retiroDeProducto(String matriculaCam, String rutCliente, int codProducto, int cant) {
         Producto prod = this.listaProductos.obtener(new Producto(codProducto));
-        
         if (!this.listaCamiones.existe(new Camion(matriculaCam))) {
             return new Retorno(Retorno.Resultado.ERROR_1);
 
@@ -158,19 +168,20 @@ public class Sistema implements IObligatorio {
             return new Retorno(Retorno.Resultado.ERROR_3);
         } else {
             if (prod.stockDisponible >= cant) { //elimina stock si hay disponible
-                eliminarStock(prod, cant);
+                eliminarStock(prod, cant); //lo elimina del stock
                 this.listaRetiros.agregarAlFinal(new Retiro(matriculaCam, rutCliente, codProducto, cant));
                 return new Retorno(Retorno.Resultado.OK);
             } else {
-                eliminarStock(prod, prod.stockDisponible);
-                int cantidadEspera = cant - prod.stockDisponible;
+                eliminarStock(prod, prod.stockDisponible); //si el stock disponible es menor que la cantidad que se desea retirar...
+                int cantidadEspera = cant - prod.stockDisponible; //se genera una cantidad en espera, que resulta de hacer el stock disponible - la cantidad retirada
                 this.listaRetiros.agregarAlFinal(new Retiro(matriculaCam, rutCliente, codProducto, prod.stockDisponible));
-                this.listaOrdenesDeEspera.agregarAlFinal(new OrdendeEspera(matriculaCam, rutCliente, codProducto, cantidadEspera));
+                this.listaOrdenesDeEspera.agregarAlFinal(new OrdendeEspera(matriculaCam, rutCliente, codProducto, cantidadEspera)); 
+                //se agrega en la cola de ordenes en espera para poder cumplir con la solicityd cuando haya stock suficiente
                 return new Retorno(Retorno.Resultado.OK);               
             }
         }
     }
-
+//se elimina del stock si la cantidad del producto es mayor a 0
     private void eliminarStock(Producto prod, int cdad) {
         int cantidad = cdad;
         while (cantidad > 0) {
@@ -188,15 +199,17 @@ public class Sistema implements IObligatorio {
         }
     }
 
-    //4.1
     @Override
+    //4.1
+    // Se listan los camiones registrados en el sistema, mostrando todos sus datos
     public Retorno listarCamiones() {
         this.listaCamiones.mostrar();
         return new Retorno(Retorno.Resultado.OK);
     }
 
-    //4.2
     @Override
+    //4.2
+    //Se muestran todos los clientes ordenados en forma alfabétic
     public Retorno listarClientesOrdenado() {
         //ORDENAR CON SORT
         this.listaClientes.sort();
@@ -205,30 +218,40 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    //4.3
+    //Lista todos los productos con su stock disponible
     public Retorno listarProductos() {
         this.listaProductos.mostrar();
         return new Retorno(Retorno.Resultado.OK);
     }
 
     @Override
+    //4.4
+    //Muestra el último producto registrado
     public Retorno ultimoProductoRegistrado() {
         this.listaProductos.obtenerFinal();
         return new Retorno(Retorno.Resultado.OK);
     }
 
     @Override
+    //4.5
+    //Se lista el detalle de cada envío realizado para el producto dado (camión que lo realizó, cliente y cant. de unidades)
     public Retorno listarEnvíosDeProducto(int codProd) {
         this.listaRetiros.mostrarFiltrado(new Retiro(codProd));
         return new Retorno(Retorno.Resultado.OK);
     }
 
     @Override
+    //4.6
+    //Lista las órdenes pendientes de un producto dado, ordenadas por orden de prioridad 
     public Retorno listarOrdenesPendientes(int codProd) {
         this.listaOrdenesDeEspera.mostrar();
         return new Retorno(Retorno.Resultado.OK);
     }
 
     @Override
+    //4.7
+    //Se muestra una matriz donde, para cada producto (filas) se muestran la cantidad de unidades enviadas para cada cliente (columnas).
     public Retorno reporteDeEnviosDeProductos() {
         return new Retorno(Retorno.Resultado.NO_IMPLEMENTADA);
     }

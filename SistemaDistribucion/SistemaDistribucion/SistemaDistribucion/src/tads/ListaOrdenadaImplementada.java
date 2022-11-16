@@ -1,14 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package tads;
 
-/**
- *
- * @author florenciavillar
- * @param <T>
- */
 public class ListaOrdenadaImplementada<T extends Comparable> implements ListaOrdenada<T> {
     
     private Nodo<T> inicio;

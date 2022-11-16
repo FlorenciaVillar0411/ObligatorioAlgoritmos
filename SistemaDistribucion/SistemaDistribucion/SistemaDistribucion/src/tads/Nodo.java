@@ -6,7 +6,6 @@ public class Nodo<T> {
 
     private T dato;
     private Nodo sig;
-    //private NodoLista ant;
 
     public Nodo(T dato) {
         this.dato = dato;
