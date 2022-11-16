@@ -131,4 +131,19 @@ public class ListaImplementada<T> implements Lista<T> {
         }
     }
 
+    public T obtenerPrincipio(){
+        return inicio.getDato();
+    }
+
+    public T obtenerSiguiente(T dato){
+        Nodo<T> aux = this.inicio;
+        while (aux != null) {
+            if (aux.getDato().equals(dato)) {
+                return aux.getSig().getDato();
+            }
+            aux = aux.getSig();
+        }
+        return null;
+    }
+
 }

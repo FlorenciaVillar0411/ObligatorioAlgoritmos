@@ -26,6 +26,10 @@ package tads;
 
     public T obtenerFinal();
 
+    public T obtenerPrincipio();
+
+    public T obtenerSiguiente();
+
     public void sort();
     
     public void mostrarFiltrado(T dato);

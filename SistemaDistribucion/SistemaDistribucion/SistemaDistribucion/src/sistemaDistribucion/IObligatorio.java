@@ -71,7 +71,7 @@ public interface IObligatorio {
     
 //4.7     
     //pre:      post: Retorna el reporte de manera correcta
-    public Retorno reporteDeEnviosDeProductos();
+    public int[][] reporteDeEnviosDeProductos();
     
     
 }

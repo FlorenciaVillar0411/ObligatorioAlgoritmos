@@ -252,8 +252,35 @@ public class Sistema implements IObligatorio {
     @Override
     //4.7
     //Se muestra una matriz donde, para cada producto (filas) se muestran la cantidad de unidades enviadas para cada cliente (columnas).
-    public Retorno reporteDeEnviosDeProductos() {
-        return new Retorno(Retorno.Resultado.NO_IMPLEMENTADA);
+    public int[][] reporteDeEnviosDeProductos() {
+        int cantProductos = this.listaProductos.cantidadElementos;
+        int cantPersonas = this.listaClientes.cantidadElementos;
+
+        int[][] matriz = new int[cantProductos][cantPersonas];
+
+        Producto producto = this.listaProductos.obtenerPrincipio();
+        Cliente cliente = this.listaClientes.obtenerPrincipio();
+
+        for(int prod=0; prod <= cantProductos; prod++)
+		{
+			for(int pers=0; pers<= cantPersonas; pers++)
+			{
+                int prodPer = 0;
+                Orden orden = this.listaRetiros.obtenerPrincipio();
+                for(int i = 0; i >= this.listaRetiros.cantidadElementos; i++){
+                    if(orden.rutCliente == cliente.rut && orden.codigoProd == cliente.codigo){
+                        prodPer+= orden.cant;
+                    }
+                    orden = this.listaRetiros.obtenerSiguiente(orden);
+                }
+
+				matriz[prod][pers] = prodPer;				            							
+                cliente = this.listaClientes.obtenerSiguiente(cliente);
+			}
+			producto = this.listaProductos.obtenerSiguiente(producto);
+		}
+
+        return matriz;
     }
 
 }
